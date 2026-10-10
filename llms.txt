@@ -55,12 +55,59 @@ The JDBC driver must be on the project's runtime classpath (e.g. `runtimeOnly("o
 | `wavebaseRevert [--to <version>]` | yes | Without `--to`: revert the most recent applied Migration. With `--to`: revert every applied Migration after `<version>` (exclusive), newest first. Fails on irreversible Migrations. |
 | `wavebaseMarkApplied --version <v>` | yes | Record `<v>` as applied without running SQL (after a DBA ran it by hand). |
 | `wavebaseMarkReverted --version <v>` | yes | Remove `<v>` from the history table without running SQL. |
-| `wavebaseVerifySchema` | yes | Compare the live database schema with the Model Snapshot; fail on any drift. Never auto-fixes. |
-| `wavebaseReverseScaffold --package <pkg>` | yes | Generate one entity class per table into `src/main/java/<pkg>`. |
+| `wavebaseVerifySchema` | yes (read-only) | Compare the live database schema with the Model Snapshot; fail on any drift. Never auto-fixes. |
+| `wavebaseReverseScaffold --package <pkg>` | yes (read-only) | Generate one entity class per table into `src/main/java/<pkg>`. |
+
+## Maven setup
+
+Until WaveBase is published, build the jars from a checkout (`./gradlew :wavebase-core:jar :wavebase-maven-plugin:jar`) and install both into the local Maven repository with `mvn install:install-file -DpomFile=<pom> -Dfile=<jar>` (add `-Dpackaging=maven-plugin` for the plugin). The POMs to use are on the site's Quickstart (Maven tab): `wavebase-core` depends on `hibernate-core 6.5.2.Final` and `jackson-databind 2.17.1`; `wavebase-maven-plugin` has packaging `maven-plugin` and depends on `wavebase-core`.
+
+Then declare the plugin in the project's `pom.xml`:
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>io.github.agallina</groupId>
+      <artifactId>wavebase-maven-plugin</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+      <configuration>
+        <jdbcUrl>${env.WAVEBASE_JDBC_URL}</jdbcUrl>
+        <jdbcUsername>${env.WAVEBASE_JDBC_USER}</jdbcUsername>
+        <jdbcPassword>${env.WAVEBASE_JDBC_PASSWORD}</jdbcPassword>
+        <dialect>POSTGRESQL</dialect>   <!-- POSTGRESQL (default) | MYSQL | H2 -->
+      </configuration>
+      <executions>
+        <execution>
+          <goals><goal>verify-migrations</goal></goals>   <!-- runs during mvn verify -->
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+
+The JDBC driver must be a project dependency (scope `runtime` is enough).
+
+Facts that matter:
+- The short `wavebase:` prefix only resolves when the plugin is declared in the pom as above. Otherwise use `io.github.agallina:wavebase-maven-plugin:0.1.0-SNAPSHOT:<goal>`.
+- `generate-migration` reads compiled classes: always run it as `mvn compile wavebase:generate-migration`.
+- Every setting can be given in `<configuration>` (name without the `wavebase.` prefix) or as `-Dwavebase.<name>=...` on the command line.
 
 ## Maven goals (prefix `wavebase:`)
 
-`generate-migration`, `verify-migrations` (default phase `verify`), `apply`, `revert [-Dwavebase.to=<v>]`, `mark-applied -Dwavebase.version=<v>`, `mark-reverted -Dwavebase.version=<v>`, `verify-schema`, `reverse-scaffold -Dwavebase.package=<pkg>`.
+| Goal | Touches DB | Gradle equivalent |
+|---|---|---|
+| `generate-migration` | no | `wavebaseGenerateMigration` |
+| `verify-migrations` (default phase `verify`) | no | `wavebaseVerifyMigrations` |
+| `apply` | yes | `wavebaseApply` |
+| `revert [-Dwavebase.to=<v>]` | yes | `wavebaseRevert [--to <v>]` |
+| `mark-applied -Dwavebase.version=<v>` | yes | `wavebaseMarkApplied --version <v>` |
+| `mark-reverted -Dwavebase.version=<v>` | yes | `wavebaseMarkReverted --version <v>` |
+| `verify-schema` | yes (read-only) | `wavebaseVerifySchema` |
+| `reverse-scaffold -Dwavebase.package=<pkg>` | yes (read-only) | `wavebaseReverseScaffold --package <pkg>` |
+
+Behaviour is identical to the Gradle task in the same row.
 
 Properties: `wavebase.jdbcUrl` (required for DB goals), `wavebase.jdbcUsername`, `wavebase.jdbcPassword`, `wavebase.dialect` (default `POSTGRESQL`), `wavebase.migrationsDirectory`, `wavebase.snapshotFile`, `wavebase.outputDirectory`, `wavebase.verify.enabled`.
 
@@ -74,16 +121,18 @@ Properties: `wavebase.jdbcUrl` (required for DB goals), `wavebase.jdbcUsername`,
 
 ## Rules for agents
 
-1. After changing any `@Entity` class, run `./gradlew wavebaseGenerateMigration` (or `mvn wavebase:generate-migration`) and commit the new Migration directory AND the updated `model-snapshot.json` in the same commit as the entity change.
+First detect the build tool: `build.gradle(.kts)` means Gradle, `pom.xml` means Maven. Use that tool's commands throughout. Each rule names the Gradle task with the Maven goal in brackets.
+
+1. After changing any `@Entity` class, run `./gradlew wavebaseGenerateMigration` (`mvn compile wavebase:generate-migration`) and commit the new Migration directory AND the updated `model-snapshot.json` in the same commit as the entity change.
 2. Never hand-edit `model-snapshot.json` or rename/delete an existing Migration directory. If a generated Migration is wrong, fix the entities and generate again before it has been applied anywhere.
 3. Read the generated `<dialect>.up.sql` and `.down.sql` before applying. Flag DropTable/DropColumn to the human: they destroy data.
-4. Do not run `wavebaseApply`, `wavebaseRevert`, `wavebaseMarkApplied` or `wavebaseMarkReverted` against a shared or production database without explicit human approval. Prefer an H2 or disposable local database for verification.
-5. `wavebaseVerifyMigrations` failing in `check` means a Migration is missing: generate it, do not disable the check.
-6. `wavebaseVerifySchema` failing means drift between the database and the snapshot. Report it; do not try to "fix" it by editing the snapshot.
-7. Never put credentials in build files; read them from environment variables or `gradle.properties` outside version control.
+4. Do not run `wavebaseApply`, `wavebaseRevert`, `wavebaseMarkApplied` or `wavebaseMarkReverted` (`wavebase:apply`, `wavebase:revert`, `wavebase:mark-applied`, `wavebase:mark-reverted`) against a shared or production database without explicit human approval. Prefer an H2 or disposable local database for verification.
+5. `wavebaseVerifyMigrations` failing in `check` (`wavebase:verify-migrations` failing in `mvn verify`) means a Migration is missing: generate it, do not disable the check.
+6. `wavebaseVerifySchema` (`wavebase:verify-schema`) failing means drift between the database and the snapshot. Report it; do not try to "fix" it by editing the snapshot.
+7. Never put credentials in build files; read them from environment variables, or `gradle.properties` / `~/.m2/settings.xml` outside version control.
 8. Reverse Scaffold is for onboarding only. After running it once, the entities are the source of truth; generate a first Migration from them.
 
-## Typical sessions
+## Typical sessions (Gradle)
 
 Add a field:
 ```
@@ -107,6 +156,32 @@ Onboard an existing database:
 # review, commit
 ./gradlew wavebaseGenerateMigration       # baseline Migration
 ./gradlew wavebaseMarkApplied --version <v>   # the tables already exist
+```
+
+## Typical sessions (Maven)
+
+Add a field:
+```
+# edit src/main/java/.../Post.java  (add @Column private String summary;)
+mvn compile wavebase:generate-migration
+git add src/main/java src/main/resources/db && git commit
+mvn verify
+```
+
+Manual DBA workflow:
+```
+mvn compile wavebase:generate-migration          # developer
+# DBA runs db/migration/<v>/postgresql.up.sql by hand
+mvn wavebase:mark-applied -Dwavebase.version=<v>
+mvn wavebase:verify-schema                       # confirm no drift
+```
+
+Onboard an existing database:
+```
+mvn wavebase:reverse-scaffold -Dwavebase.package=com.acme.entity
+# review, commit
+mvn compile wavebase:generate-migration          # baseline Migration
+mvn wavebase:mark-applied -Dwavebase.version=<v> # the tables already exist
 ```
 
 ## Links

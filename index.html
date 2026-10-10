@@ -69,6 +69,7 @@ header.nav .wrap { display: flex; align-items: center; gap: 24px; height: 56px; 
 .nav-links a { color: var(--muted); }
 .nav-links a:hover { color: var(--text); text-decoration: none; }
 @media (max-width: 760px) { .nav-links .opt { display: none; } }
+@media (max-width: 400px) { header.nav .wrap { gap: 12px; } .nav-links { gap: 12px; font-size: 13px; } }
 
 /* hero */
 .hero { padding-top: 72px; padding-bottom: 48px; }
@@ -114,11 +115,16 @@ a.card:hover { text-decoration: none; border-color: var(--accent); }
 .copy { position: absolute; top: 8px; right: 8px; font: 12px var(--sans); color: var(--code-muted); background: transparent; border: 1px solid #2a3b4a; border-radius: 6px; padding: 3px 9px; cursor: pointer; }
 .copy:hover { color: var(--code-text); border-color: var(--code-muted); }
 
-/* tabs */
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
-.tabs button { font: 600 14px var(--sans); color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; cursor: pointer; margin-bottom: -1px; }
-.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
-.panel[hidden] { display: none; }
+
+/* build tool switch */
+.section-head { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.section-head .sub { margin-bottom: 20px; }
+.tool-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 3px; background: var(--surface); flex-shrink: 0; }
+.tool-switch button { font: 600 14px var(--sans); color: var(--muted); background: none; border: 0; border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+.tool-switch button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+:root[data-theme="dark"] .tool-switch button[aria-pressed="true"] { color: #04121a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tool-switch button[aria-pressed="true"] { color: #04121a; } }
+html[data-build="maven"] .only-gradle, html:not([data-build="maven"]) .only-maven { display: none; }
 
 /* steps */
 ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: s; }
@@ -139,8 +145,9 @@ td code { white-space: nowrap; }
 .db.no { background: var(--surface-2); color: var(--muted); }
 
 /* paths */
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.two > *, .grid > * { min-width: 0; }
+@media (max-width: 760px) { .two { grid-template-columns: minmax(0, 1fr); } }
 
 /* agents */
 .agent { background: linear-gradient(180deg, var(--accent-soft), var(--surface)); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
@@ -206,23 +213,25 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space
 
   <section id="quickstart">
     <div class="wrap">
-      <h2>Quickstart</h2>
-      <p class="sub">WaveBase is not on Maven Central or the Gradle Plugin Portal yet. Until the first release, build it from a local checkout.</p>
+      <div class="section-head">
+        <div>
+          <h2>Quickstart</h2>
+          <p class="sub">WaveBase works with <strong>Gradle</strong> and <strong>Maven</strong>: pick yours, and every example on this page follows. It is not on Maven Central or the Gradle Plugin Portal yet, so until the first release you build it from a local checkout.</p>
+        </div>
+        <div class="tool-switch" role="group" aria-label="Build tool">
+        <button type="button" data-set-tool="gradle">Gradle</button>
+        <button type="button" data-set-tool="maven">Maven</button>
+      </div>
+      </div>
       <div class="callout"><strong>The source repository opens soon.</strong> It is still private while the first release is validated. The steps below show the setup as it will work once it is public. <a href="https://github.com/WaveBase-Project">Follow the organization</a> to be notified.</div>
 
-      <div class="tabs" role="tablist" data-group="build">
-        <button role="tab" aria-selected="true" data-tab="gradle">Gradle</button>
-        <button role="tab" aria-selected="false" data-tab="maven">Maven</button>
-      </div>
-
-      <div class="panel" data-group="build" data-panel="gradle">
-        <ol class="steps">
-          <li>
-            <h4>Clone WaveBase next to your project</h4>
+      <ol class="steps only-gradle">
+        <li>
+          <h4>Clone WaveBase next to your project</h4>
 <div class="code"><pre>git clone https://github.com/WaveBase-Project/WaveBase.git ../WaveBase</pre></div>
-          </li>
-          <li>
-            <h4>Include the build and apply the plugin</h4>
+        </li>
+        <li>
+          <h4>Include the build and apply the plugin</h4>
 <div class="code"><span class="label">settings.gradle.kts</span><pre><span class="k">pluginManagement</span> {
     includeBuild(<span class="s">"../WaveBase"</span>)
 }</pre></div>
@@ -243,64 +252,129 @@ wavebase {
     jdbcPassword.set(providers.environmentVariable(<span class="s">"WAVEBASE_JDBC_PASSWORD"</span>))
     dialect.set(Dialect.POSTGRESQL)  <span class="c">// or MYSQL, H2</span>
 }</pre></div>
-          </li>
-          <li>
-            <h4>Generate your first Migration</h4>
-            <p>With no snapshot yet, the first Migration creates every table, ordered so foreign keys come after the tables they reference.</p>
+        </li>
+        <li>
+          <h4>Generate your first Migration</h4>
+          <p>With no snapshot yet, the first Migration creates every table, ordered so foreign keys come after the tables they reference.</p>
 <div class="code"><pre>./gradlew wavebaseGenerateMigration
 <span class="c"># WaveBase: generated Migration 20261010143005123001 in src/main/resources/db/migration/...</span></pre></div>
-          </li>
-          <li>
-            <h4>Review, commit, apply</h4>
+        </li>
+        <li>
+          <h4>Review, commit, apply</h4>
 <div class="code"><pre>git add src/main/resources/db
 git commit -m <span class="s">"Initial schema"</span>
 ./gradlew wavebaseApply</pre></div>
-          </li>
-        </ol>
-      </div>
+        </li>
+      </ol>
 
-      <div class="panel" data-group="build" data-panel="maven" hidden>
-        <ol class="steps">
-          <li>
-            <h4>Build and install WaveBase locally</h4>
-            <p>Build the jars from a checkout, then install <code>wavebase-core</code> and <code>wavebase-maven-plugin</code> into your local repository with <code>mvn install:install-file</code>.</p>
+      <ol class="steps only-maven">
+        <li>
+          <h4>Build WaveBase</h4>
 <div class="code"><pre>git clone https://github.com/WaveBase-Project/WaveBase.git
-cd WaveBase &amp;&amp; ./gradlew :wavebase-core:jar :wavebase-maven-plugin:jar</pre></div>
-          </li>
-          <li>
-            <h4>Add the plugin to your pom</h4>
-<div class="code"><span class="label">pom.xml</span><pre>&lt;plugin&gt;
+cd WaveBase
+./gradlew :wavebase-core:jar :wavebase-maven-plugin:jar</pre></div>
+        </li>
+        <li>
+          <h4>Install it into your local Maven repository</h4>
+          <p>Save these two POM files in the WaveBase folder. They tell Maven what each jar depends on.</p>
+<div class="code"><span class="label">core.pom</span><pre>&lt;project xmlns="http://maven.apache.org/POM/4.0.0"&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
+  &lt;artifactId&gt;wavebase-core&lt;/artifactId&gt;
+  &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.hibernate.orm&lt;/groupId&gt;
+      &lt;artifactId&gt;hibernate-core&lt;/artifactId&gt;
+      &lt;version&gt;6.5.2.Final&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;
+      &lt;artifactId&gt;jackson-databind&lt;/artifactId&gt;
+      &lt;version&gt;2.17.1&lt;/version&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+&lt;/project&gt;</pre></div>
+<div class="code"><span class="label">plugin.pom</span><pre>&lt;project xmlns="http://maven.apache.org/POM/4.0.0"&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
   &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
   &lt;artifactId&gt;wavebase-maven-plugin&lt;/artifactId&gt;
   &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
-  &lt;configuration&gt;
-    &lt;jdbcUrl&gt;${env.WAVEBASE_JDBC_URL}&lt;/jdbcUrl&gt;
-    &lt;jdbcUsername&gt;${env.WAVEBASE_JDBC_USER}&lt;/jdbcUsername&gt;
-    &lt;jdbcPassword&gt;${env.WAVEBASE_JDBC_PASSWORD}&lt;/jdbcPassword&gt;
-    &lt;dialect&gt;POSTGRESQL&lt;/dialect&gt;
-  &lt;/configuration&gt;
-  &lt;executions&gt;
-    &lt;execution&gt;
-      &lt;goals&gt;&lt;goal&gt;verify-migrations&lt;/goal&gt;&lt;/goals&gt;  <span class="c">&lt;!-- runs in the verify phase --&gt;</span>
-    &lt;/execution&gt;
-  &lt;/executions&gt;
-&lt;/plugin&gt;</pre></div>
-          </li>
-          <li>
-            <h4>Generate, review, apply</h4>
+  &lt;packaging&gt;maven-plugin&lt;/packaging&gt;
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
+      &lt;artifactId&gt;wavebase-core&lt;/artifactId&gt;
+      &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+&lt;/project&gt;</pre></div>
+<div class="code"><pre>mvn install:install-file -DpomFile=core.pom \
+    -Dfile=wavebase-core/build/libs/wavebase-core-0.1.0-SNAPSHOT.jar
+mvn install:install-file -DpomFile=plugin.pom -Dpackaging=maven-plugin \
+    -Dfile=wavebase-maven-plugin/build/libs/wavebase-maven-plugin-0.1.0-SNAPSHOT.jar</pre></div>
+        </li>
+        <li>
+          <h4>Add the plugin to your project</h4>
+          <p>Declaring it under <code>&lt;build&gt;</code> is what enables the short <code>wavebase:</code> goal prefix and runs <code>verify-migrations</code> during <code>mvn verify</code>.</p>
+<div class="code"><span class="label">pom.xml</span><pre>&lt;dependencies&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.postgresql&lt;/groupId&gt;
+    &lt;artifactId&gt;postgresql&lt;/artifactId&gt;
+    &lt;version&gt;42.7.3&lt;/version&gt;
+    &lt;scope&gt;runtime&lt;/scope&gt;  <span class="c">&lt;!-- your JDBC driver --&gt;</span>
+  &lt;/dependency&gt;
+&lt;/dependencies&gt;
+
+&lt;build&gt;
+  &lt;plugins&gt;
+    &lt;plugin&gt;
+      &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
+      &lt;artifactId&gt;wavebase-maven-plugin&lt;/artifactId&gt;
+      &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
+      &lt;configuration&gt;
+        &lt;jdbcUrl&gt;${env.WAVEBASE_JDBC_URL}&lt;/jdbcUrl&gt;
+        &lt;jdbcUsername&gt;${env.WAVEBASE_JDBC_USER}&lt;/jdbcUsername&gt;
+        &lt;jdbcPassword&gt;${env.WAVEBASE_JDBC_PASSWORD}&lt;/jdbcPassword&gt;
+        &lt;dialect&gt;POSTGRESQL&lt;/dialect&gt;  <span class="c">&lt;!-- or MYSQL, H2 --&gt;</span>
+      &lt;/configuration&gt;
+      &lt;executions&gt;
+        &lt;execution&gt;
+          &lt;goals&gt;&lt;goal&gt;verify-migrations&lt;/goal&gt;&lt;/goals&gt;
+        &lt;/execution&gt;
+      &lt;/executions&gt;
+    &lt;/plugin&gt;
+  &lt;/plugins&gt;
+&lt;/build&gt;</pre></div>
+        </li>
+        <li>
+          <h4>Generate your first Migration</h4>
+          <p>Run <code>compile</code> in the same command: WaveBase reads your compiled entity classes.</p>
 <div class="code"><pre>mvn compile wavebase:generate-migration
-git add src/main/resources/db &amp;&amp; git commit -m <span class="s">"Initial schema"</span>
+<span class="c"># [INFO] WaveBase: generated Migration 20261010143005123001 in src/main/resources/db/migration/...</span></pre></div>
+        </li>
+        <li>
+          <h4>Review, commit, apply</h4>
+<div class="code"><pre>git add src/main/resources/db
+git commit -m <span class="s">"Initial schema"</span>
 mvn wavebase:apply</pre></div>
-          </li>
-        </ol>
-      </div>
+        </li>
+      </ol>
     </div>
   </section>
 
   <section id="workflows">
     <div class="wrap">
-      <h2>Workflows</h2>
-      <p class="sub">The everyday loop is the same for everyone. What differs is who runs the SQL against the database.</p>
+      <div class="section-head">
+        <div>
+          <h2>Workflows</h2>
+          <p class="sub">The everyday loop is the same for everyone. What differs is who runs the SQL against the database.</p>
+        </div>
+        <div class="tool-switch" role="group" aria-label="Build tool">
+        <button type="button" data-set-tool="gradle">Gradle</button>
+        <button type="button" data-set-tool="maven">Maven</button>
+      </div>
+      </div>
 
       <h3>The everyday loop</h3>
 <div class="code"><pre><span class="c">// 1. change an entity</span>
@@ -312,7 +386,7 @@ mvn wavebase:apply</pre></div>
     <span class="k">@ManyToOne</span>(optional = <span class="k">false</span>) <span class="k">@JoinColumn</span>(name = <span class="s">"author_id"</span>)
     <span class="k">private</span> User author;
 }</pre></div>
-<div class="code"><pre><span class="c"># 2. generate: writes db/migration/&lt;version&gt;/ and updates model-snapshot.json</span>
+<div class="code only-gradle"><pre><span class="c"># 2. generate: writes db/migration/&lt;version&gt;/ and updates model-snapshot.json</span>
 ./gradlew wavebaseGenerateMigration
 
 <span class="c"># 3. commit the entity, the Migration and the snapshot together</span>
@@ -320,30 +394,48 @@ git add -A &amp;&amp; git commit -m <span class="s">"Add Post.summary"</span>
 
 <span class="c"># 4. CI: `check` fails if someone forgets step 2</span>
 ./gradlew check</pre></div>
+<div class="code only-maven"><pre><span class="c"># 2. generate: writes db/migration/&lt;version&gt;/ and updates model-snapshot.json</span>
+mvn compile wavebase:generate-migration
+
+<span class="c"># 3. commit the entity, the Migration and the snapshot together</span>
+git add -A &amp;&amp; git commit -m <span class="s">"Add Post.summary"</span>
+
+<span class="c"># 4. CI: `mvn verify` fails if someone forgets step 2</span>
+mvn verify</pre></div>
 
       <div class="two">
         <div class="card">
           <h4>Automatic apply</h4>
           <p>WaveBase runs the SQL itself. Good for local, test and most CI/CD environments.</p>
-<div class="code"><pre>./gradlew wavebaseApply
+<div class="code only-gradle"><pre>./gradlew wavebaseApply
 ./gradlew wavebaseRevert            <span class="c"># last one</span>
 ./gradlew wavebaseRevert --to &lt;v&gt;   <span class="c"># everything after &lt;v&gt;</span></pre></div>
+<div class="code only-maven"><pre>mvn wavebase:apply
+mvn wavebase:revert                     <span class="c"># last one</span>
+mvn wavebase:revert -Dwavebase.to=&lt;v&gt;  <span class="c"># everything after &lt;v&gt;</span></pre></div>
         </div>
         <div class="card">
           <h4>DBA applies by hand</h4>
           <p>A DBA runs the generated SQL file; WaveBase only records it. Drift check confirms the result.</p>
-<div class="code"><pre><span class="c"># DBA runs &lt;v&gt;/postgresql.up.sql</span>
+<div class="code only-gradle"><pre><span class="c"># DBA runs &lt;v&gt;/postgresql.up.sql</span>
 ./gradlew wavebaseMarkApplied --version &lt;v&gt;
 ./gradlew wavebaseVerifySchema</pre></div>
+<div class="code only-maven"><pre><span class="c"># DBA runs &lt;v&gt;/postgresql.up.sql</span>
+mvn wavebase:mark-applied -Dwavebase.version=&lt;v&gt;
+mvn wavebase:verify-schema</pre></div>
         </div>
       </div>
 
       <h3>Onboard an existing database</h3>
       <p class="sub">Reverse Scaffold writes one entity class per table. It runs once: after that, your entities are the source of truth.</p>
-<div class="code"><pre>./gradlew wavebaseReverseScaffold --package com.acme.entity
+<div class="code only-gradle"><pre>./gradlew wavebaseReverseScaffold --package com.acme.entity
 <span class="c"># review and commit the generated classes, then create the baseline:</span>
 ./gradlew wavebaseGenerateMigration
 ./gradlew wavebaseMarkApplied --version &lt;v&gt;   <span class="c"># tables already exist</span></pre></div>
+<div class="code only-maven"><pre>mvn wavebase:reverse-scaffold -Dwavebase.package=com.acme.entity
+<span class="c"># review and commit the generated classes, then create the baseline:</span>
+mvn compile wavebase:generate-migration
+mvn wavebase:mark-applied -Dwavebase.version=&lt;v&gt;   <span class="c"># tables already exist</span></pre></div>
 
       <div class="callout"><strong>Renames are drop + add.</strong> v1 detects created/dropped tables, columns and foreign keys. A renamed column shows up as a drop followed by an add, which loses data. Always read the generated SQL before applying.</div>
     </div>
@@ -352,7 +444,7 @@ git add -A &amp;&amp; git commit -m <span class="s">"Add Post.summary"</span>
   <section id="reference">
     <div class="wrap">
       <h2>Command reference</h2>
-      <p class="sub">The Gradle tasks (group <code>wavebase</code>) and the Maven goals behave identically.</p>
+      <p class="sub">The Gradle tasks (group <code>wavebase</code>) and the Maven goals behave identically. The short <code>wavebase:</code> prefix works when the plugin is declared in your <code>pom.xml</code>; otherwise use the full form <code>io.github.agallina:wavebase-maven-plugin:0.1.0-SNAPSHOT:&lt;goal&gt;</code>.</p>
 
       <div class="table-wrap">
         <table>
@@ -373,7 +465,7 @@ git add -A &amp;&amp; git commit -m <span class="s">"Add Post.summary"</span>
       <h3>Configuration</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Gradle <code>wavebase { }</code></th><th>Maven property</th><th>Default</th></tr></thead>
+          <thead><tr><th>Gradle <code>wavebase { }</code></th><th>Maven <code>-D</code> property</th><th>Default</th></tr></thead>
           <tbody>
             <tr><td><code>jdbcUrl</code></td><td><code>wavebase.jdbcUrl</code></td><td>required for database tasks</td></tr>
             <tr><td><code>jdbcUsername</code> / <code>jdbcPassword</code></td><td><code>wavebase.jdbcUsername</code> / <code>wavebase.jdbcPassword</code></td><td>empty</td></tr>
@@ -385,6 +477,8 @@ git add -A &amp;&amp; git commit -m <span class="s">"Add Post.summary"</span>
           </tbody>
         </table>
       </div>
+
+      <p class="sub">In Maven, the same settings also go in the plugin's <code>&lt;configuration&gt;</code> block, using the name without the <code>wavebase.</code> prefix (for example <code>&lt;jdbcUrl&gt;</code>, <code>&lt;dialect&gt;</code>, <code>&lt;outputDirectory&gt;</code>).</p>
 
       <h3>What a Migration looks like on disk</h3>
 <div class="code"><pre>src/main/resources/db/
@@ -401,8 +495,12 @@ git add -A &amp;&amp; git commit -m <span class="s">"Add Post.summary"</span>
     <div class="wrap">
       <div class="agent">
         <h2>Using WaveBase with an AI coding agent</h2>
-        <p class="sub">Point your agent at <a href="llms.txt"><code>llms.txt</code></a>: a single plain-text file with the concepts, every command, the defaults and the rules below. Or paste this into your project's <code>AGENTS.md</code> / <code>CLAUDE.md</code>:</p>
-<div class="code"><pre>## Database schema (WaveBase)
+        <p class="sub">Point your agent at <a href="llms.txt"><code>llms.txt</code></a>: a single plain-text file with the concepts, every command, the defaults and the rules below. Or paste this into your project's <code>AGENTS.md</code> / <code>CLAUDE.md</code>, in the version for your build tool:</p>
+<div class="tool-switch" style="margin-bottom:8px" role="group" aria-label="Build tool">
+        <button type="button" data-set-tool="gradle">Gradle</button>
+        <button type="button" data-set-tool="maven">Maven</button>
+      </div>
+<div class="code only-gradle"><pre>## Database schema (WaveBase)
 Full reference: https://wavebase-project.github.io/llms.txt
 
 - Entities under src/main/java are the source of truth for the schema.
@@ -411,11 +509,25 @@ Full reference: https://wavebase-project.github.io/llms.txt
   with the entity change.
 - Never hand-edit model-snapshot.json or existing Migration folders.
 - Read the generated *.up.sql / *.down.sql. Call out DROP TABLE / DROP COLUMN.
-- Do not run wavebaseApply, wavebaseRevert, wavebaseMarkApplied or
-  wavebaseMarkReverted against shared or production databases without approval.
-- If `check` fails on wavebaseVerifyMigrations, generate the missing Migration;
+- Do not run wavebaseApply, wavebaseRevert, wavebaseMarkApplied or wavebaseMarkReverted
+  against shared or production databases without approval.
+- If `./gradlew check` fails on wavebaseVerifyMigrations, generate the missing Migration;
   do not disable the check.
 - If wavebaseVerifySchema reports drift, report it; do not edit the snapshot.</pre></div>
+<div class="code only-maven"><pre>## Database schema (WaveBase)
+Full reference: https://wavebase-project.github.io/llms.txt
+
+- Entities under src/main/java are the source of truth for the schema.
+- After changing any @Entity, run `mvn compile wavebase:generate-migration` and commit
+  the new db/migration/&lt;version&gt;/ folder and db/model-snapshot.json together
+  with the entity change.
+- Never hand-edit model-snapshot.json or existing Migration folders.
+- Read the generated *.up.sql / *.down.sql. Call out DROP TABLE / DROP COLUMN.
+- Do not run wavebase:apply, wavebase:revert, wavebase:mark-applied or wavebase:mark-reverted
+  against shared or production databases without approval.
+- If `mvn verify` fails on wavebase:verify-migrations, generate the missing Migration;
+  do not disable the check.
+- If wavebase:verify-schema reports drift, report it; do not edit the snapshot.</pre></div>
         <ul>
           <li><strong>Deterministic, file-based output.</strong> Everything an agent produces is a plain file in the repo, reviewable in a pull request.</li>
           <li><strong>Safe by default.</strong> Generating and verifying never touch the database; only explicitly-named tasks do.</li>
@@ -462,16 +574,25 @@ Full reference: https://wavebase-project.github.io/llms.txt
 </footer>
 
 <script>
-// Tabs
-document.querySelectorAll('.tabs').forEach(function (tabs) {
-  var group = tabs.dataset.group;
-  tabs.addEventListener('click', function (e) {
-    var btn = e.target.closest('button[data-tab]');
+// Build tool switch: one choice drives every example on the page
+(function () {
+  var root = document.documentElement;
+  function setTool(tool) {
+    root.dataset.build = tool;
+    document.querySelectorAll('[data-set-tool]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.setTool === tool));
+    });
+  }
+  var saved = null;
+  try { saved = localStorage.getItem('wavebase-build'); } catch (e) {}
+  setTool(saved === 'maven' ? 'maven' : 'gradle');
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-set-tool]');
     if (!btn) return;
-    tabs.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-selected', String(b === btn)); });
-    document.querySelectorAll('.panel[data-group="' + group + '"]').forEach(function (p) { p.hidden = p.dataset.panel !== btn.dataset.tab; });
+    setTool(btn.dataset.setTool);
+    try { localStorage.setItem('wavebase-build', btn.dataset.setTool); } catch (e) {}
   });
-});
+})();
 
 // Copy buttons
 document.querySelectorAll('.code').forEach(function (block) {
