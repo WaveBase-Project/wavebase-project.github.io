@@ -60,26 +60,34 @@ The JDBC driver must be on the project's runtime classpath (e.g. `runtimeOnly("o
 
 ## Maven setup
 
-Until WaveBase is published, build the jars from a checkout (`./gradlew :wavebase-core:jar :wavebase-maven-plugin:jar`) and install both into the local Maven repository with `mvn install:install-file -DpomFile=<pom> -Dfile=<jar>` (add `-Dpackaging=maven-plugin` for the plugin). The POMs to use are on the site's Quickstart (Maven tab): `wavebase-core` depends on `hibernate-core 6.5.2.Final` and `jackson-databind 2.17.1`; `wavebase-maven-plugin` has packaging `maven-plugin` and depends on `wavebase-core`.
+Install once per machine (until WaveBase is on Maven Central). Needs only Java 17; the wrapper fetches Gradle:
 
-Then declare the plugin in the project's `pom.xml`:
+```
+git clone https://github.com/WaveBase-Project/WaveBase.git
+cd WaveBase
+./gradlew publishToMavenLocal
+```
+
+Then add two blocks to the project's `pom.xml`. Settings go in `<properties>`, so any of them can be overridden with `-Dwavebase.<name>=...`:
 
 ```xml
+<properties>
+  <wavebase.version>0.1.0-SNAPSHOT</wavebase.version>
+  <wavebase.dialect>POSTGRESQL</wavebase.dialect>   <!-- POSTGRESQL | MYSQL | H2 -->
+  <wavebase.jdbcUrl>${env.WAVEBASE_JDBC_URL}</wavebase.jdbcUrl>
+  <wavebase.jdbcUsername>${env.WAVEBASE_JDBC_USER}</wavebase.jdbcUsername>
+  <wavebase.jdbcPassword>${env.WAVEBASE_JDBC_PASSWORD}</wavebase.jdbcPassword>
+</properties>
+
 <build>
   <plugins>
     <plugin>
       <groupId>io.github.agallina</groupId>
       <artifactId>wavebase-maven-plugin</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
-      <configuration>
-        <jdbcUrl>${env.WAVEBASE_JDBC_URL}</jdbcUrl>
-        <jdbcUsername>${env.WAVEBASE_JDBC_USER}</jdbcUsername>
-        <jdbcPassword>${env.WAVEBASE_JDBC_PASSWORD}</jdbcPassword>
-        <dialect>POSTGRESQL</dialect>   <!-- POSTGRESQL (default) | MYSQL | H2 -->
-      </configuration>
+      <version>${wavebase.version}</version>
       <executions>
         <execution>
-          <goals><goal>verify-migrations</goal></goals>   <!-- runs during mvn verify -->
+          <goals><goal>verify-migrations</goal></goals>   <!-- runs during mvn verify / install -->
         </execution>
       </executions>
     </plugin>
@@ -87,12 +95,12 @@ Then declare the plugin in the project's `pom.xml`:
 </build>
 ```
 
-The JDBC driver must be a project dependency (scope `runtime` is enough).
+The JDBC driver must be a project dependency (scope `runtime` is enough): `org.postgresql:postgresql`, `com.mysql:mysql-connector-j` or `com.h2database:h2`.
 
 Facts that matter:
 - The short `wavebase:` prefix only resolves when the plugin is declared in the pom as above. Otherwise use `io.github.agallina:wavebase-maven-plugin:0.1.0-SNAPSHOT:<goal>`.
 - `generate-migration` reads compiled classes: always run it as `mvn compile wavebase:generate-migration`.
-- Every setting can be given in `<configuration>` (name without the `wavebase.` prefix) or as `-Dwavebase.<name>=...` on the command line.
+- When editing a pom for a user, add to the existing `<properties>` and `<build><plugins>` sections instead of creating duplicates.
 
 ## Maven goals (prefix `wavebase:`)
 

@@ -57,6 +57,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 72px; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
+p code, li code, summary code { overflow-wrap: anywhere; }
 code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); padding: .1em .35em; border-radius: 4px; }
 .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
 
@@ -125,6 +126,9 @@ a.card:hover { text-decoration: none; border-color: var(--accent); }
 :root[data-theme="dark"] .tool-switch button[aria-pressed="true"] { color: #04121a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tool-switch button[aria-pressed="true"] { color: #04121a; } }
 html[data-build="maven"] .only-gradle, html:not([data-build="maven"]) .only-maven { display: none; }
+
+details.full-pom { margin-top: 16px; }
+details.full-pom summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 15px; }
 
 /* steps */
 ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: s; }
@@ -269,78 +273,36 @@ git commit -m <span class="s">"Initial schema"</span>
 
       <ol class="steps only-maven">
         <li>
-          <h4>Build WaveBase</h4>
+          <h4>Install WaveBase on your machine (once)</h4>
+          <p>One command builds WaveBase and puts it in your local Maven repository (<code>~/.m2</code>). You only need Java 17: the <code>./gradlew</code> script downloads everything else by itself. This step goes away once WaveBase is on Maven Central.</p>
 <div class="code"><pre>git clone https://github.com/WaveBase-Project/WaveBase.git
 cd WaveBase
-./gradlew :wavebase-core:jar :wavebase-maven-plugin:jar</pre></div>
+./gradlew publishToMavenLocal</pre></div>
         </li>
         <li>
-          <h4>Install it into your local Maven repository</h4>
-          <p>Save these two POM files in the WaveBase folder. They tell Maven what each jar depends on.</p>
-<div class="code"><span class="label">core.pom</span><pre>&lt;project xmlns="http://maven.apache.org/POM/4.0.0"&gt;
-  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
-  &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
-  &lt;artifactId&gt;wavebase-core&lt;/artifactId&gt;
-  &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
-  &lt;dependencies&gt;
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.hibernate.orm&lt;/groupId&gt;
-      &lt;artifactId&gt;hibernate-core&lt;/artifactId&gt;
-      &lt;version&gt;6.5.2.Final&lt;/version&gt;
-    &lt;/dependency&gt;
-    &lt;dependency&gt;
-      &lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;
-      &lt;artifactId&gt;jackson-databind&lt;/artifactId&gt;
-      &lt;version&gt;2.17.1&lt;/version&gt;
-    &lt;/dependency&gt;
-  &lt;/dependencies&gt;
-&lt;/project&gt;</pre></div>
-<div class="code"><span class="label">plugin.pom</span><pre>&lt;project xmlns="http://maven.apache.org/POM/4.0.0"&gt;
-  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
-  &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
-  &lt;artifactId&gt;wavebase-maven-plugin&lt;/artifactId&gt;
-  &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
-  &lt;packaging&gt;maven-plugin&lt;/packaging&gt;
-  &lt;dependencies&gt;
-    &lt;dependency&gt;
-      &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
-      &lt;artifactId&gt;wavebase-core&lt;/artifactId&gt;
-      &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
-    &lt;/dependency&gt;
-  &lt;/dependencies&gt;
-&lt;/project&gt;</pre></div>
-<div class="code"><pre>mvn install:install-file -DpomFile=core.pom \
-    -Dfile=wavebase-core/build/libs/wavebase-core-0.1.0-SNAPSHOT.jar
-mvn install:install-file -DpomFile=plugin.pom -Dpackaging=maven-plugin \
-    -Dfile=wavebase-maven-plugin/build/libs/wavebase-maven-plugin-0.1.0-SNAPSHOT.jar</pre></div>
-        </li>
-        <li>
-          <h4>Add the plugin to your project</h4>
-          <p>Declaring it under <code>&lt;build&gt;</code> is what enables the short <code>wavebase:</code> goal prefix and runs <code>verify-migrations</code> during <code>mvn verify</code>.</p>
-<div class="code"><span class="label">pom.xml</span><pre>&lt;dependencies&gt;
-  &lt;dependency&gt;
-    &lt;groupId&gt;org.postgresql&lt;/groupId&gt;
-    &lt;artifactId&gt;postgresql&lt;/artifactId&gt;
-    &lt;version&gt;42.7.3&lt;/version&gt;
-    &lt;scope&gt;runtime&lt;/scope&gt;  <span class="c">&lt;!-- your JDBC driver --&gt;</span>
-  &lt;/dependency&gt;
-&lt;/dependencies&gt;
+          <h4>Add WaveBase to your <code>pom.xml</code></h4>
+          <p>Two blocks. First, the settings, in <code>&lt;properties&gt;</code>. Change the dialect to match your database; leave the rest as is.</p>
+<div class="code"><span class="label">pom.xml · inside &lt;project&gt;</span><pre>&lt;properties&gt;
+  <span class="c">&lt;!-- ...your existing properties... --&gt;</span>
 
-&lt;build&gt;
+  &lt;wavebase.version&gt;0.1.0-SNAPSHOT&lt;/wavebase.version&gt;
+  &lt;wavebase.dialect&gt;POSTGRESQL&lt;/wavebase.dialect&gt;   <span class="c">&lt;!-- POSTGRESQL, MYSQL or H2 --&gt;</span>
+  &lt;wavebase.jdbcUrl&gt;${env.WAVEBASE_JDBC_URL}&lt;/wavebase.jdbcUrl&gt;
+  &lt;wavebase.jdbcUsername&gt;${env.WAVEBASE_JDBC_USER}&lt;/wavebase.jdbcUsername&gt;
+  &lt;wavebase.jdbcPassword&gt;${env.WAVEBASE_JDBC_PASSWORD}&lt;/wavebase.jdbcPassword&gt;
+&lt;/properties&gt;</pre></div>
+          <p>Then the plugin, in <code>&lt;build&gt;&lt;plugins&gt;</code>. If your pom has no <code>&lt;build&gt;</code> section yet, paste the whole block.</p>
+<div class="code"><span class="label">pom.xml · inside &lt;project&gt;</span><pre>&lt;build&gt;
   &lt;plugins&gt;
     &lt;plugin&gt;
       &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
       &lt;artifactId&gt;wavebase-maven-plugin&lt;/artifactId&gt;
-      &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
-      &lt;configuration&gt;
-        &lt;jdbcUrl&gt;${env.WAVEBASE_JDBC_URL}&lt;/jdbcUrl&gt;
-        &lt;jdbcUsername&gt;${env.WAVEBASE_JDBC_USER}&lt;/jdbcUsername&gt;
-        &lt;jdbcPassword&gt;${env.WAVEBASE_JDBC_PASSWORD}&lt;/jdbcPassword&gt;
-        &lt;dialect&gt;POSTGRESQL&lt;/dialect&gt;  <span class="c">&lt;!-- or MYSQL, H2 --&gt;</span>
-      &lt;/configuration&gt;
+      &lt;version&gt;${wavebase.version}&lt;/version&gt;
       &lt;executions&gt;
         &lt;execution&gt;
-          &lt;goals&gt;&lt;goal&gt;verify-migrations&lt;/goal&gt;&lt;/goals&gt;
+          &lt;goals&gt;
+            &lt;goal&gt;verify-migrations&lt;/goal&gt;   <span class="c">&lt;!-- checks every mvn verify / mvn install --&gt;</span>
+          &lt;/goals&gt;
         &lt;/execution&gt;
       &lt;/executions&gt;
     &lt;/plugin&gt;
@@ -348,8 +310,88 @@ mvn install:install-file -DpomFile=plugin.pom -Dpackaging=maven-plugin \
 &lt;/build&gt;</pre></div>
         </li>
         <li>
+          <h4>Make sure the JDBC driver is a dependency</h4>
+          <p>Most projects already have it. If not, add the one for your database:</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Database</th><th><code>wavebase.dialect</code></th><th>Driver dependency</th></tr></thead>
+              <tbody>
+                <tr><td>PostgreSQL</td><td><code>POSTGRESQL</code></td><td><code>org.postgresql:postgresql:42.7.3</code></td></tr>
+                <tr><td>MySQL</td><td><code>MYSQL</code></td><td><code>com.mysql:mysql-connector-j:8.4.0</code></td></tr>
+                <tr><td>H2</td><td><code>H2</code></td><td><code>com.h2database:h2:2.2.224</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <details class="full-pom">
+            <summary>Show a complete <code>pom.xml</code> to start from</summary>
+<div class="code"><span class="label">pom.xml</span><pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot;
+         xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+         xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+  &lt;groupId&gt;com.example&lt;/groupId&gt;
+  &lt;artifactId&gt;my-app&lt;/artifactId&gt;
+  &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
+
+  &lt;properties&gt;
+    &lt;maven.compiler.release&gt;17&lt;/maven.compiler.release&gt;
+    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+
+    <span class="c">&lt;!-- WaveBase --&gt;</span>
+    &lt;wavebase.version&gt;0.1.0-SNAPSHOT&lt;/wavebase.version&gt;
+    &lt;wavebase.dialect&gt;POSTGRESQL&lt;/wavebase.dialect&gt;
+    &lt;wavebase.jdbcUrl&gt;${env.WAVEBASE_JDBC_URL}&lt;/wavebase.jdbcUrl&gt;
+    &lt;wavebase.jdbcUsername&gt;${env.WAVEBASE_JDBC_USER}&lt;/wavebase.jdbcUsername&gt;
+    &lt;wavebase.jdbcPassword&gt;${env.WAVEBASE_JDBC_PASSWORD}&lt;/wavebase.jdbcPassword&gt;
+  &lt;/properties&gt;
+
+  &lt;dependencies&gt;
+    <span class="c">&lt;!-- Your entities: Hibernate 6 / Jakarta Persistence --&gt;</span>
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.hibernate.orm&lt;/groupId&gt;
+      &lt;artifactId&gt;hibernate-core&lt;/artifactId&gt;
+      &lt;version&gt;6.5.2.Final&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    <span class="c">&lt;!-- JDBC driver for your database --&gt;</span>
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.postgresql&lt;/groupId&gt;
+      &lt;artifactId&gt;postgresql&lt;/artifactId&gt;
+      &lt;version&gt;42.7.3&lt;/version&gt;
+      &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+
+  &lt;build&gt;
+    &lt;plugins&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
+        &lt;artifactId&gt;wavebase-maven-plugin&lt;/artifactId&gt;
+        &lt;version&gt;${wavebase.version}&lt;/version&gt;
+        &lt;executions&gt;
+          &lt;execution&gt;
+            &lt;goals&gt;
+              &lt;goal&gt;verify-migrations&lt;/goal&gt;
+            &lt;/goals&gt;
+          &lt;/execution&gt;
+        &lt;/executions&gt;
+      &lt;/plugin&gt;
+    &lt;/plugins&gt;
+  &lt;/build&gt;
+&lt;/project&gt;</pre></div>
+          </details>
+        </li>
+        <li>
+          <h4>Tell WaveBase where your database is</h4>
+          <p>The pom reads the connection from environment variables, so no password ends up in git. Generating Migrations does not need them; applying them does.</p>
+<div class="code"><pre>export WAVEBASE_JDBC_URL=jdbc:postgresql://localhost:5432/mydb
+export WAVEBASE_JDBC_USER=myuser
+export WAVEBASE_JDBC_PASSWORD=secret</pre></div>
+        </li>
+        <li>
           <h4>Generate your first Migration</h4>
-          <p>Run <code>compile</code> in the same command: WaveBase reads your compiled entity classes.</p>
+          <p>Run <code>compile</code> in the same command: WaveBase reads your compiled entity classes. With no snapshot yet, the first Migration creates every table.</p>
 <div class="code"><pre>mvn compile wavebase:generate-migration
 <span class="c"># [INFO] WaveBase: generated Migration 20261010143005123001 in src/main/resources/db/migration/...</span></pre></div>
         </li>
@@ -358,8 +400,19 @@ mvn install:install-file -DpomFile=plugin.pom -Dpackaging=maven-plugin \
 <div class="code"><pre>git add src/main/resources/db
 git commit -m <span class="s">"Initial schema"</span>
 mvn wavebase:apply</pre></div>
+          <p>From now on, <code>mvn verify</code> and <code>mvn install</code> fail if an entity changes without a Migration, so nobody forgets one.</p>
         </li>
       </ol>
+
+      <div class="only-maven">
+        <h3>Maven questions</h3>
+        <div class="grid">
+          <div class="card"><h4>A different database per environment?</h4><p>Any setting can be overridden on the command line, for example <code>mvn wavebase:apply -Dwavebase.jdbcUrl=jdbc:postgresql://staging/mydb</code>. Maven profiles work too.</p></div>
+          <div class="card"><h4>No environment variables?</h4><p>Write the values directly in <code>&lt;properties&gt;</code>. Fine for a local H2 or Docker database; keep real passwords out of git.</p></div>
+          <div class="card"><h4>Skip the check for one build?</h4><p><code>mvn install -Dwavebase.verify.enabled=false</code>. Useful for quick local builds; keep it on in CI.</p></div>
+          <div class="card"><h4>Why <code>wavebase:</code> works</h4><p>The short prefix resolves because the plugin is declared in your pom. Without it, use <code>io.github.agallina:wavebase-maven-plugin:0.1.0-SNAPSHOT:&lt;goal&gt;</code>.</p></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -478,7 +531,7 @@ mvn wavebase:mark-applied -Dwavebase.version=&lt;v&gt;   <span class="c"># table
         </table>
       </div>
 
-      <p class="sub">In Maven, the same settings also go in the plugin's <code>&lt;configuration&gt;</code> block, using the name without the <code>wavebase.</code> prefix (for example <code>&lt;jdbcUrl&gt;</code>, <code>&lt;dialect&gt;</code>, <code>&lt;outputDirectory&gt;</code>).</p>
+      <p class="sub">In Maven, put these properties in your pom's <code>&lt;properties&gt;</code> block (as in the Quickstart) and override any of them with <code>-D</code> on the command line.</p>
 
       <h3>What a Migration looks like on disk</h3>
 <div class="code"><pre>src/main/resources/db/
