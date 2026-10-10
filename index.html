@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WaveBase</title>
+<meta name="description" content="Schema migrations for Hibernate, generated from your entities. Gradle and Maven plugins for PostgreSQL, MySQL and H2.">
+<link rel="alternate" type="text/plain" href="llms.txt" title="WaveBase for AI agents">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f9fb;
+  --surface: #ffffff;
+  --surface-2: #eef3f7;
+  --text: #0f1b26;
+  --muted: #546474;
+  --border: #d9e2ea;
+  --accent: #0b6e99;
+  --accent-soft: #e0f0f7;
+  --code-bg: #0f1b26;
+  --code-text: #dce7ef;
+  --code-muted: #7f95a8;
+  --warn: #9a5b00;
+  --warn-soft: #fff4e0;
+  --radius: 10px;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b131a; --surface: #111c25; --surface-2: #16242f; --text: #e4edf3;
+    --muted: #93a6b6; --border: #23384a; --accent: #4cb8e6; --accent-soft: #12303f;
+    --code-bg: #070d12; --code-text: #dce7ef; --code-muted: #6f8597;
+    --warn: #f0b552; --warn-soft: #2b2112;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b131a; --surface: #111c25; --surface-2: #16242f; --text: #e4edf3;
+  --muted: #93a6b6; --border: #23384a; --accent: #4cb8e6; --accent-soft: #12303f;
+  --code-bg: #070d12; --code-text: #dce7ef; --code-muted: #6f8597;
+  --warn: #f0b552; --warn-soft: #2b2112;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); padding: .1em .35em; border-radius: 4px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+/* nav */
+header.nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+header.nav .wrap { display: flex; align-items: center; gap: 24px; height: 56px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text); }
+.brand:hover { text-decoration: none; }
+.nav-links { display: flex; gap: 20px; margin-left: auto; font-size: 14px; }
+.nav-links a { color: var(--muted); }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+@media (max-width: 760px) { .nav-links .opt { display: none; } }
+
+/* hero */
+.hero { padding: 72px 0 48px; }
+.pill { display: inline-block; font-size: 13px; font-weight: 500; color: var(--warn); background: var(--warn-soft); padding: 3px 10px; border-radius: 99px; margin-bottom: 20px; }
+.hero h1 { font-size: clamp(34px, 6vw, 54px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 18px; max-width: 16ch; }
+.hero p.lead { font-size: 19px; color: var(--muted); max-width: 60ch; margin: 0 0 28px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 15px; border: 1px solid var(--border); color: var(--text); background: var(--surface); }
+.btn:hover { text-decoration: none; border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+:root[data-theme="dark"] .btn.primary { color: #04121a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #04121a; } }
+
+/* flow diagram */
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 48px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.flow div { padding: 18px; border-right: 1px solid var(--border); position: relative; }
+.flow div:last-child { border-right: 0; }
+.flow b { display: block; font-size: 14px; margin-bottom: 4px; }
+.flow span { font-size: 13px; color: var(--muted); }
+.flow .n { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+@media (max-width: 760px) { .flow { grid-template-columns: 1fr 1fr; } .flow div:nth-child(2) { border-right: 0; } .flow div:nth-child(-n+2) { border-bottom: 1px solid var(--border); } }
+
+/* sections */
+section { padding: 56px 0; border-top: 1px solid var(--border); }
+section h2 { font-size: 28px; letter-spacing: -0.01em; margin: 0 0 8px; }
+section .sub { color: var(--muted); margin: 0 0 28px; max-width: 68ch; }
+h3 { font-size: 18px; margin: 32px 0 10px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.card h4 { margin: 0 0 6px; font-size: 16px; }
+.card p { margin: 0; color: var(--muted); font-size: 14.5px; }
+a.card { color: inherit; display: block; }
+a.card:hover { text-decoration: none; border-color: var(--accent); }
+.card .path { font-family: var(--mono); font-size: 12px; color: var(--accent); margin-top: 10px; display: block; word-break: break-all; }
+
+/* code */
+.code { position: relative; background: var(--code-bg); color: var(--code-text); border-radius: var(--radius); margin: 12px 0 20px; }
+.code pre { margin: 0; padding: 18px 20px; overflow-x: auto; font: 13.5px/1.6 var(--mono); }
+.code .c { color: var(--code-muted); }
+.code .k { color: #7cc7ec; }
+.code .s { color: #a6d98a; }
+.code .label { display: block; padding: 8px 20px 0; font: 12px var(--mono); color: var(--code-muted); }
+.copy { position: absolute; top: 8px; right: 8px; font: 12px var(--sans); color: var(--code-muted); background: transparent; border: 1px solid #2a3b4a; border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+.copy:hover { color: var(--code-text); border-color: var(--code-muted); }
+
+/* tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.tabs button { font: 600 14px var(--sans); color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; cursor: pointer; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.panel[hidden] { display: none; }
+
+/* steps */
+ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+ol.steps > li { counter-increment: s; position: relative; padding-left: 44px; margin-bottom: 28px; }
+ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; display: grid; place-items: center; }
+ol.steps h4 { margin: 2px 0 6px; font-size: 16px; }
+ol.steps p { margin: 0 0 6px; color: var(--muted); }
+
+/* table */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: var(--surface-2); font-weight: 600; }
+td code { white-space: nowrap; }
+.db { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.db.yes { background: var(--warn-soft); color: var(--warn); }
+.db.no { background: var(--surface-2); color: var(--muted); }
+
+/* paths */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+
+/* agents */
+.agent { background: linear-gradient(180deg, var(--accent-soft), var(--surface)); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
+.agent ul { padding-left: 20px; margin: 10px 0 0; }
+.agent li { margin-bottom: 8px; }
+.callout { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 14.5px; margin: 16px 0; }
+
+footer { border-top: 1px solid var(--border); padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+.theme-toggle { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="WaveBase home">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3" stroke="currentColor" stroke-width="1.8"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13" stroke="currentColor" stroke-width="1.8"/><path d="M4 12.5c2-1.6 3.4-1.6 5.3 0s3.4 1.6 5.4 0 3.4-1.6 5.3 0" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>
+      WaveBase
+    </a>
+    <nav class="nav-links">
+      <a href="#quickstart">Quickstart</a>
+      <a class="opt" href="#workflows">Workflows</a>
+      <a class="opt" href="#reference">Reference</a>
+      <a href="#agents">AI agents</a>
+      <a href="https://github.com/WaveBase-Project">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <span class="pill">Pre-release · 0.1.0-SNAPSHOT</span>
+    <h1>Migrations generated from your Hibernate entities.</h1>
+    <p class="lead">WaveBase brings the Entity Framework / Django workflow to the JVM. Change an <code>@Entity</code>, run one task, and get a versioned Migration with reviewable SQL for PostgreSQL, MySQL and H2. Gradle and Maven plugins included.</p>
+    <div class="cta">
+      <a class="btn primary" href="#quickstart">Get started</a>
+      <a class="btn" href="llms.txt">llms.txt for agents</a>
+      <a class="btn" href="https://github.com/WaveBase-Project">Follow on GitHub</a>
+    </div>
+
+    <div class="flow" role="list" aria-label="How WaveBase works">
+      <div role="listitem"><span class="n">01</span><b>Edit entities</b><span>Your <code>@Entity</code> classes are the source of truth.</span></div>
+      <div role="listitem"><span class="n">02</span><b>Generate</b><span>Diff against the committed Model Snapshot.</span></div>
+      <div role="listitem"><span class="n">03</span><b>Review SQL</b><span><code>up.sql</code> / <code>down.sql</code> per dialect.</span></div>
+      <div role="listitem"><span class="n">04</span><b>Apply</b><span>Automatically, or by a DBA and then marked.</span></div>
+    </div>
+  </div>
+
+  <section id="concepts">
+    <div class="wrap">
+      <h2>Five ideas to know</h2>
+      <p class="sub">Everything WaveBase does is built on these. The full glossary ships with the source code.</p>
+      <div class="grid">
+        <div class="card"><h4>Entity Model</h4><p>The <code>@Entity</code> classes in your <code>main</code> source set, read via reflection after compilation.</p></div>
+        <div class="card"><h4>Model Snapshot</h4><p>A committed JSON file holding the last known Entity Model. The baseline every diff is computed against.</p><span class="path">src/main/resources/db/model-snapshot.json</span></div>
+        <div class="card"><h4>Migration</h4><p>A versioned folder with plain SQL per dialect. A missing <code>down.sql</code> means it is irreversible on that dialect.</p><span class="path">db/migration/&lt;version&gt;/postgresql.up.sql</span></div>
+        <div class="card"><h4>Schema History Table</h4><p>Lives in the database and records which Migrations are applied there. Created on first use.</p><span class="path">wavebase_schema_history</span></div>
+        <div class="card"><h4>Reverse Scaffold</h4><p>One-shot generation of entity classes from an existing database, for onboarding legacy schemas.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quickstart">
+    <div class="wrap">
+      <h2>Quickstart</h2>
+      <p class="sub">WaveBase is not on Maven Central or the Gradle Plugin Portal yet. Until the first release, build it from a local checkout.</p>
+      <div class="callout"><strong>The source repository opens soon.</strong> It is still private while the first release is validated. The steps below show the setup as it will work once it is public. <a href="https://github.com/WaveBase-Project">Follow the organization</a> to be notified.</div>
+
+      <div class="tabs" role="tablist" data-group="build">
+        <button role="tab" aria-selected="true" data-tab="gradle">Gradle</button>
+        <button role="tab" aria-selected="false" data-tab="maven">Maven</button>
+      </div>
+
+      <div class="panel" data-group="build" data-panel="gradle">
+        <ol class="steps">
+          <li>
+            <h4>Clone WaveBase next to your project</h4>
+<div class="code"><pre>git clone https://github.com/WaveBase-Project/WaveBase.git ../WaveBase</pre></div>
+          </li>
+          <li>
+            <h4>Include the build and apply the plugin</h4>
+<div class="code"><span class="label">settings.gradle.kts</span><pre><span class="k">pluginManagement</span> {
+    includeBuild(<span class="s">"../WaveBase"</span>)
+}</pre></div>
+<div class="code"><span class="label">build.gradle.kts</span><pre><span class="k">import</span> io.github.agallina.wavebase.core.dialect.Dialect
+
+plugins {
+    java
+    id(<span class="s">"io.github.agallina.wavebase"</span>)
+}
+
+dependencies {
+    runtimeOnly(<span class="s">"org.postgresql:postgresql:42.7.3"</span>)  <span class="c">// your JDBC driver</span>
+}
+
+wavebase {
+    jdbcUrl.set(providers.environmentVariable(<span class="s">"WAVEBASE_JDBC_URL"</span>))
+    jdbcUsername.set(providers.environmentVariable(<span class="s">"WAVEBASE_JDBC_USER"</span>))
+    jdbcPassword.set(providers.environmentVariable(<span class="s">"WAVEBASE_JDBC_PASSWORD"</span>))
+    dialect.set(Dialect.POSTGRESQL)  <span class="c">// or MYSQL, H2</span>
+}</pre></div>
+          </li>
+          <li>
+            <h4>Generate your first Migration</h4>
+            <p>With no snapshot yet, the first Migration creates every table, ordered so foreign keys come after the tables they reference.</p>
+<div class="code"><pre>./gradlew wavebaseGenerateMigration
+<span class="c"># WaveBase: generated Migration 20261010143005123001 in src/main/resources/db/migration/...</span></pre></div>
+          </li>
+          <li>
+            <h4>Review, commit, apply</h4>
+<div class="code"><pre>git add src/main/resources/db
+git commit -m <span class="s">"Initial schema"</span>
+./gradlew wavebaseApply</pre></div>
+          </li>
+        </ol>
+      </div>
+
+      <div class="panel" data-group="build" data-panel="maven" hidden>
+        <ol class="steps">
+          <li>
+            <h4>Build and install WaveBase locally</h4>
+            <p>Build the jars from a checkout, then install <code>wavebase-core</code> and <code>wavebase-maven-plugin</code> into your local repository with <code>mvn install:install-file</code>.</p>
+<div class="code"><pre>git clone https://github.com/WaveBase-Project/WaveBase.git
+cd WaveBase &amp;&amp; ./gradlew :wavebase-core:jar :wavebase-maven-plugin:jar</pre></div>
+          </li>
+          <li>
+            <h4>Add the plugin to your pom</h4>
+<div class="code"><span class="label">pom.xml</span><pre>&lt;plugin&gt;
+  &lt;groupId&gt;io.github.agallina&lt;/groupId&gt;
+  &lt;artifactId&gt;wavebase-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
+  &lt;configuration&gt;
+    &lt;jdbcUrl&gt;${env.WAVEBASE_JDBC_URL}&lt;/jdbcUrl&gt;
+    &lt;jdbcUsername&gt;${env.WAVEBASE_JDBC_USER}&lt;/jdbcUsername&gt;
+    &lt;jdbcPassword&gt;${env.WAVEBASE_JDBC_PASSWORD}&lt;/jdbcPassword&gt;
+    &lt;dialect&gt;POSTGRESQL&lt;/dialect&gt;
+  &lt;/configuration&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;goals&gt;&lt;goal&gt;verify-migrations&lt;/goal&gt;&lt;/goals&gt;  <span class="c">&lt;!-- runs in the verify phase --&gt;</span>
+    &lt;/execution&gt;
+  &lt;/executions&gt;
+&lt;/plugin&gt;</pre></div>
+          </li>
+          <li>
+            <h4>Generate, review, apply</h4>
+<div class="code"><pre>mvn compile wavebase:generate-migration
+git add src/main/resources/db &amp;&amp; git commit -m <span class="s">"Initial schema"</span>
+mvn wavebase:apply</pre></div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="workflows">
+    <div class="wrap">
+      <h2>Workflows</h2>
+      <p class="sub">The everyday loop is the same for everyone. What differs is who runs the SQL against the database.</p>
+
+      <h3>The everyday loop</h3>
+<div class="code"><pre><span class="c">// 1. change an entity</span>
+<span class="k">@Entity</span> <span class="k">@Table</span>(name = <span class="s">"posts"</span>)
+<span class="k">public class</span> Post {
+    <span class="k">@Id</span> <span class="k">private</span> Long id;
+    <span class="k">@Column</span>(nullable = <span class="k">false</span>) <span class="k">private</span> String title;
+    <span class="k">@Column</span> <span class="k">private</span> String summary;            <span class="c">// new</span>
+    <span class="k">@ManyToOne</span>(optional = <span class="k">false</span>) <span class="k">@JoinColumn</span>(name = <span class="s">"author_id"</span>)
+    <span class="k">private</span> User author;
+}</pre></div>
+<div class="code"><pre><span class="c"># 2. generate: writes db/migration/&lt;version&gt;/ and updates model-snapshot.json</span>
+./gradlew wavebaseGenerateMigration
+
+<span class="c"># 3. commit the entity, the Migration and the snapshot together</span>
+git add -A &amp;&amp; git commit -m <span class="s">"Add Post.summary"</span>
+
+<span class="c"># 4. CI: `check` fails if someone forgets step 2</span>
+./gradlew check</pre></div>
+
+      <div class="two">
+        <div class="card">
+          <h4>Automatic apply</h4>
+          <p>WaveBase runs the SQL itself. Good for local, test and most CI/CD environments.</p>
+<div class="code"><pre>./gradlew wavebaseApply
+./gradlew wavebaseRevert            <span class="c"># last one</span>
+./gradlew wavebaseRevert --to &lt;v&gt;   <span class="c"># everything after &lt;v&gt;</span></pre></div>
+        </div>
+        <div class="card">
+          <h4>DBA applies by hand</h4>
+          <p>A DBA runs the generated SQL file; WaveBase only records it. Drift check confirms the result.</p>
+<div class="code"><pre><span class="c"># DBA runs &lt;v&gt;/postgresql.up.sql</span>
+./gradlew wavebaseMarkApplied --version &lt;v&gt;
+./gradlew wavebaseVerifySchema</pre></div>
+        </div>
+      </div>
+
+      <h3>Onboard an existing database</h3>
+      <p class="sub">Reverse Scaffold writes one entity class per table. It runs once: after that, your entities are the source of truth.</p>
+<div class="code"><pre>./gradlew wavebaseReverseScaffold --package com.acme.entity
+<span class="c"># review and commit the generated classes, then create the baseline:</span>
+./gradlew wavebaseGenerateMigration
+./gradlew wavebaseMarkApplied --version &lt;v&gt;   <span class="c"># tables already exist</span></pre></div>
+
+      <div class="callout"><strong>Renames are drop + add.</strong> v1 detects created/dropped tables, columns and foreign keys. A renamed column shows up as a drop followed by an add, which loses data. Always read the generated SQL before applying.</div>
+    </div>
+  </section>
+
+  <section id="reference">
+    <div class="wrap">
+      <h2>Command reference</h2>
+      <p class="sub">The Gradle tasks (group <code>wavebase</code>) and the Maven goals behave identically.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Gradle</th><th>Maven</th><th>Database</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>wavebaseGenerateMigration</code></td><td><code>wavebase:generate-migration</code></td><td><span class="db no">no</span></td><td>Diffs entities against the snapshot, writes a new Migration and updates the snapshot. No-op if nothing changed.</td></tr>
+            <tr><td><code>wavebaseVerifyMigrations</code></td><td><code>wavebase:verify-migrations</code></td><td><span class="db no">no</span></td><td>Fails if entities changed without a Migration. Wired into <code>check</code> / <code>verify</code>. Disable with <code>wavebase.verify.enabled=false</code>.</td></tr>
+            <tr><td><code>wavebaseApply</code></td><td><code>wavebase:apply</code></td><td><span class="db yes">writes</span></td><td>Runs <code>&lt;dialect&gt;.up.sql</code> of every pending Migration, in order.</td></tr>
+            <tr><td><code>wavebaseRevert [--to v]</code></td><td><code>wavebase:revert [-Dwavebase.to=v]</code></td><td><span class="db yes">writes</span></td><td>Reverts the last Migration, or every one after <code>v</code>. Fails if one is irreversible.</td></tr>
+            <tr><td><code>wavebaseMarkApplied --version v</code></td><td><code>wavebase:mark-applied -Dwavebase.version=v</code></td><td><span class="db yes">writes</span></td><td>Records <code>v</code> as applied, without running SQL.</td></tr>
+            <tr><td><code>wavebaseMarkReverted --version v</code></td><td><code>wavebase:mark-reverted -Dwavebase.version=v</code></td><td><span class="db yes">writes</span></td><td>Removes <code>v</code> from the history table, without running SQL.</td></tr>
+            <tr><td><code>wavebaseVerifySchema</code></td><td><code>wavebase:verify-schema</code></td><td><span class="db no">reads</span></td><td>Compares the live schema with the snapshot and fails on drift. Never auto-fixes.</td></tr>
+            <tr><td><code>wavebaseReverseScaffold --package p</code></td><td><code>wavebase:reverse-scaffold -Dwavebase.package=p</code></td><td><span class="db no">reads</span></td><td>Generates entity classes from an existing database.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Configuration</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Gradle <code>wavebase { }</code></th><th>Maven property</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>jdbcUrl</code></td><td><code>wavebase.jdbcUrl</code></td><td>required for database tasks</td></tr>
+            <tr><td><code>jdbcUsername</code> / <code>jdbcPassword</code></td><td><code>wavebase.jdbcUsername</code> / <code>wavebase.jdbcPassword</code></td><td>empty</td></tr>
+            <tr><td><code>dialect</code></td><td><code>wavebase.dialect</code></td><td><code>POSTGRESQL</code> (also <code>MYSQL</code>, <code>H2</code>)</td></tr>
+            <tr><td><code>migrationsDirectory</code></td><td><code>wavebase.migrationsDirectory</code></td><td><code>src/main/resources/db/migration</code></td></tr>
+            <tr><td><code>snapshotFile</code></td><td><code>wavebase.snapshotFile</code></td><td><code>src/main/resources/db/model-snapshot.json</code></td></tr>
+            <tr><td><code>reverseScaffoldOutputDirectory</code></td><td><code>wavebase.outputDirectory</code></td><td><code>src/main/java</code></td></tr>
+            <tr><td><code>verifyEnabled</code> (or <code>-Pwavebase.verify.enabled</code>)</td><td><code>wavebase.verify.enabled</code></td><td><code>true</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>What a Migration looks like on disk</h3>
+<div class="code"><pre>src/main/resources/db/
+├── model-snapshot.json
+└── migration/
+    └── 20261010143005123001/
+        ├── postgresql.up.sql   postgresql.down.sql
+        ├── mysql.up.sql        mysql.down.sql
+        └── h2.up.sql           h2.down.sql</pre></div>
+    </div>
+  </section>
+
+  <section id="agents">
+    <div class="wrap">
+      <div class="agent">
+        <h2>Using WaveBase with an AI coding agent</h2>
+        <p class="sub">Point your agent at <a href="llms.txt"><code>llms.txt</code></a>: a single plain-text file with the concepts, every command, the defaults and the rules below. Or paste this into your project's <code>AGENTS.md</code> / <code>CLAUDE.md</code>:</p>
+<div class="code"><pre>## Database schema (WaveBase)
+Full reference: https://wavebase-project.github.io/llms.txt
+
+- Entities under src/main/java are the source of truth for the schema.
+- After changing any @Entity, run `./gradlew wavebaseGenerateMigration` and commit
+  the new db/migration/&lt;version&gt;/ folder and db/model-snapshot.json together
+  with the entity change.
+- Never hand-edit model-snapshot.json or existing Migration folders.
+- Read the generated *.up.sql / *.down.sql. Call out DROP TABLE / DROP COLUMN.
+- Do not run wavebaseApply, wavebaseRevert, wavebaseMarkApplied or
+  wavebaseMarkReverted against shared or production databases without approval.
+- If `check` fails on wavebaseVerifyMigrations, generate the missing Migration;
+  do not disable the check.
+- If wavebaseVerifySchema reports drift, report it; do not edit the snapshot.</pre></div>
+        <ul>
+          <li><strong>Deterministic, file-based output.</strong> Everything an agent produces is a plain file in the repo, reviewable in a pull request.</li>
+          <li><strong>Safe by default.</strong> Generating and verifying never touch the database; only explicitly-named tasks do.</li>
+          <li><strong>Loud failures.</strong> Missing Migrations and drift fail the build with a message naming the cause, so agents can self-correct.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="status">
+    <div class="wrap">
+      <h2>Scope and status</h2>
+      <div class="grid">
+        <div class="card"><h4>Supported now</h4><p>Java 17+, Hibernate 6 / Jakarta Persistence. PostgreSQL, MySQL, H2. Tables, columns, foreign keys. Gradle and Maven.</p></div>
+        <div class="card"><h4>Not yet</h4><p>Rename detection, indexes and unique constraints as separate changes, a standalone CLI, published artifacts.</p></div>
+        <div class="card"><h4>Out of scope</h4><p>NoSQL databases (planned as a separate project). Continuous sync from the database back to entities.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="community">
+    <div class="wrap">
+      <h2>Community</h2>
+      <p class="sub">WaveBase is open source and shaped in the open. Design decisions are tracked as GitHub issues, so every behaviour on this page has a discussion behind it.</p>
+      <div class="grid">
+        <a class="card" href="https://github.com/WaveBase-Project/wavebase-project.github.io/issues"><h4>Questions and feedback</h4><p>Until the source opens, open an issue on the site repository. Include your entities, dialect and what you expected.</p></a>
+        <a class="card" href="https://github.com/WaveBase-Project"><h4>Contribute code</h4><p>The source repository opens with the first release. Follow the organization to know when pull requests are open.</p></a>
+        <a class="card" href="https://github.com/WaveBase-Project/wavebase-project.github.io"><h4>Improve this site</h4><p>This page and <code>llms.txt</code> live in a public repository. Fixes are welcome.</p></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>WaveBase · Apache License 2.0</span>
+    <span>
+      <a href="https://github.com/WaveBase-Project">GitHub</a> ·
+      <a href="https://github.com/WaveBase-Project/wavebase-project.github.io">Site source</a> ·
+      <a href="llms.txt">llms.txt</a> ·
+      <button class="theme-toggle" id="theme" type="button">Toggle theme</button>
+    </span>
+  </div>
+</footer>
+
+<script>
+// Tabs
+document.querySelectorAll('.tabs').forEach(function (tabs) {
+  var group = tabs.dataset.group;
+  tabs.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-tab]');
+    if (!btn) return;
+    tabs.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-selected', String(b === btn)); });
+    document.querySelectorAll('.panel[data-group="' + group + '"]').forEach(function (p) { p.hidden = p.dataset.panel !== btn.dataset.tab; });
+  });
+});
+
+// Copy buttons
+document.querySelectorAll('.code').forEach(function (block) {
+  var btn = document.createElement('button');
+  btn.className = 'copy';
+  btn.type = 'button';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', function () {
+    var text = block.querySelector('pre').innerText;
+    navigator.clipboard.writeText(text).then(function () {
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+    });
+  });
+  block.appendChild(btn);
+});
+
+// Theme toggle (remembered per browser)
+(function () {
+  var root = document.documentElement;
+  try { var saved = localStorage.getItem('wavebase-theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
+  document.getElementById('theme').addEventListener('click', function () {
+    var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('wavebase-theme', root.dataset.theme); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

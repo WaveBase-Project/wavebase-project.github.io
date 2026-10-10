@@ -1,0 +1,117 @@
+# WaveBase
+
+> WaveBase is a schema-migration tool for Hibernate/JPA projects on the JVM (Java 17+), inspired by Entity Framework Migrations and Django's makemigrations/inspectdb. Your `@Entity` classes are the source of truth: WaveBase diffs them against a committed Model Snapshot and writes a versioned Migration with plain SQL files per dialect (PostgreSQL, MySQL, H2). It ships as a Gradle plugin and a Maven plugin with identical behaviour.
+
+Status: pre-release (`0.1.0-SNAPSHOT`), not yet published to Maven Central or the Gradle Plugin Portal. Relational databases only.
+
+This file is written for AI coding agents. Follow the rules below exactly; they encode decisions that are not obvious from the code.
+
+## Core concepts
+
+- Entity Model: the `@Entity`-annotated classes in the project's `main` source set, read by reflection after compilation.
+- Model Snapshot: `src/main/resources/db/model-snapshot.json`. Committed to git. The last known state of the Entity Model. Never edit it by hand; it is rewritten by generate-migration.
+- Migration: a directory `src/main/resources/db/migration/<version>/` where `<version>` is a timestamp `yyyyMMddHHmmssSSS` plus a 3-digit counter (e.g. `20261010143005123001`). Contains `postgresql.up.sql`, `mysql.up.sql`, `h2.up.sql` and, when reversible, the matching `<dialect>.down.sql`. A missing down file means the Migration is irreversible on that dialect.
+- Schema History Table: `wavebase_schema_history (version, applied_at)` inside the target database, created on first use. One row per applied Migration. Reverting deletes the row.
+- Reverse Scaffold: one-shot generation of entity `.java` files from an existing database. Not a sync mechanism; run it once to onboard, then review and commit.
+
+## Supported schema changes (v1)
+
+CreateTable, DropTable, AddColumn, DropColumn, AddForeignKey, DropForeignKey. Column renames are seen as drop + add: review generated SQL before applying, because a rename produced this way loses data.
+
+## Gradle setup
+
+```kotlin
+// settings.gradle.kts — until WaveBase is published, consume it from a local checkout
+pluginManagement {
+    includeBuild("../WaveBase")
+}
+
+// build.gradle.kts
+import io.github.agallina.wavebase.core.dialect.Dialect
+
+plugins {
+    java
+    id("io.github.agallina.wavebase")
+}
+
+wavebase {
+    jdbcUrl.set(providers.environmentVariable("WAVEBASE_JDBC_URL"))
+    jdbcUsername.set(providers.environmentVariable("WAVEBASE_JDBC_USER"))
+    jdbcPassword.set(providers.environmentVariable("WAVEBASE_JDBC_PASSWORD"))
+    dialect.set(Dialect.POSTGRESQL)          // POSTGRESQL (default) | MYSQL | H2
+    // migrationsDirectory, snapshotFile, reverseScaffoldOutputDirectory, verifyEnabled: see defaults below
+}
+```
+
+The JDBC driver must be on the project's runtime classpath (e.g. `runtimeOnly("org.postgresql:postgresql:<version>")`).
+
+## Gradle tasks (group `wavebase`)
+
+| Task | Touches DB | What it does |
+|---|---|---|
+| `wavebaseGenerateMigration` | no | Diff Entity Model vs Model Snapshot; write a new Migration and update the snapshot. No-op if nothing changed. |
+| `wavebaseVerifyMigrations` | no | Fails if the Entity Model changed without a Migration. Wired into `check`. Disable with `-Pwavebase.verify.enabled=false`. |
+| `wavebaseApply` | yes | Run `<dialect>.up.sql` of every pending Migration, in version order, recording each in the history table. |
+| `wavebaseRevert [--to <version>]` | yes | Without `--to`: revert the most recent applied Migration. With `--to`: revert every applied Migration after `<version>` (exclusive), newest first. Fails on irreversible Migrations. |
+| `wavebaseMarkApplied --version <v>` | yes | Record `<v>` as applied without running SQL (after a DBA ran it by hand). |
+| `wavebaseMarkReverted --version <v>` | yes | Remove `<v>` from the history table without running SQL. |
+| `wavebaseVerifySchema` | yes | Compare the live database schema with the Model Snapshot; fail on any drift. Never auto-fixes. |
+| `wavebaseReverseScaffold --package <pkg>` | yes | Generate one entity class per table into `src/main/java/<pkg>`. |
+
+## Maven goals (prefix `wavebase:`)
+
+`generate-migration`, `verify-migrations` (default phase `verify`), `apply`, `revert [-Dwavebase.to=<v>]`, `mark-applied -Dwavebase.version=<v>`, `mark-reverted -Dwavebase.version=<v>`, `verify-schema`, `reverse-scaffold -Dwavebase.package=<pkg>`.
+
+Properties: `wavebase.jdbcUrl` (required for DB goals), `wavebase.jdbcUsername`, `wavebase.jdbcPassword`, `wavebase.dialect` (default `POSTGRESQL`), `wavebase.migrationsDirectory`, `wavebase.snapshotFile`, `wavebase.outputDirectory`, `wavebase.verify.enabled`.
+
+## Defaults
+
+- migrationsDirectory: `src/main/resources/db/migration`
+- snapshotFile: `src/main/resources/db/model-snapshot.json`
+- reverseScaffoldOutputDirectory: `src/main/java`
+- dialect: `POSTGRESQL`
+- verifyEnabled: `true`
+
+## Rules for agents
+
+1. After changing any `@Entity` class, run `./gradlew wavebaseGenerateMigration` (or `mvn wavebase:generate-migration`) and commit the new Migration directory AND the updated `model-snapshot.json` in the same commit as the entity change.
+2. Never hand-edit `model-snapshot.json` or rename/delete an existing Migration directory. If a generated Migration is wrong, fix the entities and generate again before it has been applied anywhere.
+3. Read the generated `<dialect>.up.sql` and `.down.sql` before applying. Flag DropTable/DropColumn to the human: they destroy data.
+4. Do not run `wavebaseApply`, `wavebaseRevert`, `wavebaseMarkApplied` or `wavebaseMarkReverted` against a shared or production database without explicit human approval. Prefer an H2 or disposable local database for verification.
+5. `wavebaseVerifyMigrations` failing in `check` means a Migration is missing: generate it, do not disable the check.
+6. `wavebaseVerifySchema` failing means drift between the database and the snapshot. Report it; do not try to "fix" it by editing the snapshot.
+7. Never put credentials in build files; read them from environment variables or `gradle.properties` outside version control.
+8. Reverse Scaffold is for onboarding only. After running it once, the entities are the source of truth; generate a first Migration from them.
+
+## Typical sessions
+
+Add a field:
+```
+# edit src/main/java/.../Post.java  (add @Column private String summary;)
+./gradlew wavebaseGenerateMigration
+git add src/main/java src/main/resources/db && git commit
+./gradlew check
+```
+
+Manual DBA workflow:
+```
+./gradlew wavebaseGenerateMigration       # developer
+# DBA runs db/migration/<v>/postgresql.up.sql by hand
+./gradlew wavebaseMarkApplied --version <v>
+./gradlew wavebaseVerifySchema            # confirm no drift
+```
+
+Onboard an existing database:
+```
+./gradlew wavebaseReverseScaffold --package com.acme.entity
+# review, commit
+./gradlew wavebaseGenerateMigration       # baseline Migration
+./gradlew wavebaseMarkApplied --version <v>   # the tables already exist
+```
+
+## Links
+
+- Site: https://wavebase-project.github.io/
+- This file: https://wavebase-project.github.io/llms.txt
+- Organization: https://github.com/WaveBase-Project
+- The source repository is private until the first release; it will be linked here when it opens.
