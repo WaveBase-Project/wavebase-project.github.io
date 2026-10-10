@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WaveBase</title>
 <meta name="description" content="Schema migrations for Hibernate, generated from your entities. Gradle and Maven plugins for PostgreSQL, MySQL and H2.">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="WaveBase">
+<meta property="og:description" content="Schema migrations for Hibernate, generated from your entities.">
+<meta property="og:image" content="https://wavebase-project.github.io/logo.png">
+<meta property="og:url" content="https://wavebase-project.github.io/">
+<meta name="twitter:card" content="summary">
 <link rel="alternate" type="text/plain" href="llms.txt" title="WaveBase for AI agents">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,6 +31,8 @@
   --code-muted: #7f95a8;
   --warn: #9a5b00;
   --warn-soft: #fff4e0;
+  --logo-body: #04659d;
+  --logo-wave: #2fb2ef;
   --radius: 10px;
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -34,6 +43,7 @@
     --muted: #93a6b6; --border: #23384a; --accent: #4cb8e6; --accent-soft: #12303f;
     --code-bg: #070d12; --code-text: #dce7ef; --code-muted: #6f8597;
     --warn: #f0b552; --warn-soft: #2b2112;
+    --logo-body: #3a9fd6; --logo-wave: #5cc6f5;
   }
 }
 :root[data-theme="dark"] {
@@ -41,6 +51,7 @@
   --muted: #93a6b6; --border: #23384a; --accent: #4cb8e6; --accent-soft: #12303f;
   --code-bg: #070d12; --code-text: #dce7ef; --code-muted: #6f8597;
   --warn: #f0b552; --warn-soft: #2b2112;
+    --logo-body: #3a9fd6; --logo-wave: #5cc6f5;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 72px; }
@@ -61,7 +72,8 @@ header.nav .wrap { display: flex; align-items: center; gap: 24px; height: 56px; 
 @media (max-width: 760px) { .nav-links .opt { display: none; } }
 
 /* hero */
-.hero { padding: 72px 0 48px; }
+.hero { padding-top: 72px; padding-bottom: 48px; }
+.hero-logo { display: block; margin-bottom: 24px; }
 .pill { display: inline-block; font-size: 13px; font-weight: 500; color: var(--warn); background: var(--warn-soft); padding: 3px 10px; border-radius: 99px; margin-bottom: 20px; }
 .hero h1 { font-size: clamp(34px, 6vw, 54px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 18px; max-width: 16ch; }
 .hero p.lead { font-size: 19px; color: var(--muted); max-width: 60ch; margin: 0 0 28px; }
@@ -148,7 +160,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space
 <header class="nav">
   <div class="wrap">
     <a class="brand" href="#top" aria-label="WaveBase home">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3" stroke="currentColor" stroke-width="1.8"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13" stroke="currentColor" stroke-width="1.8"/><path d="M4 12.5c2-1.6 3.4-1.6 5.3 0s3.4 1.6 5.4 0 3.4-1.6 5.3 0" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <svg width="26" height="26" viewBox="240 200 775 835" fill="none" stroke-linecap="round" stroke-width="60" aria-hidden="true"><g stroke="var(--logo-body)"><ellipse cx="627" cy="367" rx="320" ry="98"/><path d="M307 367v205"/><path d="M948 367v170"/><path d="M307 745v125a320 98 0 0 0 641 0v-140"/></g><path stroke="var(--logo-wave)" stroke-width="80" d="M318 650C400 705 500 700 600 650S760 560 830 590S915 635 938 660"/></svg>
       WaveBase
     </a>
     <nav class="nav-links">
@@ -163,6 +175,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space
 
 <main id="top">
   <div class="wrap hero">
+    <svg class="hero-logo" width="72" height="72" viewBox="240 200 775 835" fill="none" stroke-linecap="round" stroke-width="60" aria-hidden="true"><g stroke="var(--logo-body)"><ellipse cx="627" cy="367" rx="320" ry="98"/><path d="M307 367v205"/><path d="M948 367v170"/><path d="M307 745v125a320 98 0 0 0 641 0v-140"/></g><path stroke="var(--logo-wave)" stroke-width="80" d="M318 650C400 705 500 700 600 650S760 560 830 590S915 635 938 660"/></svg>
     <span class="pill">Pre-release · 0.1.0-SNAPSHOT</span>
     <h1>Migrations generated from your Hibernate entities.</h1>
     <p class="lead">WaveBase brings the Entity Framework / Django workflow to the JVM. Change an <code>@Entity</code>, run one task, and get a versioned Migration with reviewable SQL for PostgreSQL, MySQL and H2. Gradle and Maven plugins included.</p>

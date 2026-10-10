@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="240 200 775 835" fill="none" stroke-linecap="round" stroke-width="60">
+  <style>
+    .body { stroke: #04659d; }
+    .wave { stroke: #2fb2ef; }
+    @media (prefers-color-scheme: dark) { .body { stroke: #3a9fd6; } .wave { stroke: #5cc6f5; } }
+  </style>
+  <g class="body">
+    <ellipse cx="627" cy="367" rx="320" ry="98"/>
+    <path d="M307 367v205"/>
+    <path d="M948 367v170"/>
+    <path d="M307 745v125a320 98 0 0 0 641 0v-140"/>
+  </g>
+  <path class="wave" stroke-width="80" d="M318 650C400 705 500 700 600 650S760 560 830 590S915 635 938 660"/>
+</svg>
